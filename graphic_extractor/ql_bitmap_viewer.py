@@ -248,6 +248,11 @@ class MainWindow(QMainWindow):
             "La imagen comienza a leerse en el byte Inicio - Offset del fichero."
         )
         row3.addWidget(self.position_edit)
+
+        self.save_btn = QPushButton("Guardar")
+        self.save_btn.setToolTip("Guarda como PNG la imagen que se está visualizando ahora mismo.")
+        row3.addWidget(self.save_btn)
+
         row3.addStretch(1)
         root.addLayout(row3)
 
@@ -263,6 +268,7 @@ class MainWindow(QMainWindow):
 
     def _connect(self):
         self.open_btn.clicked.connect(self.open_file)
+        self.save_btn.clicked.connect(self.save_image)
 
         self.zoom.valueChanged.connect(self._on_zoom)
         self.mode.currentIndexChanged.connect(self._on_mode_changed)
@@ -354,6 +360,33 @@ class MainWindow(QMainWindow):
 
         self._sync_scroll_from_position()
         self._render()
+
+    def save_image(self):
+        if self.canvas.image.isNull():
+            QMessageBox.information(
+                self, "Guardar imagen",
+                "No hay ninguna imagen que guardar todavía."
+            )
+            return
+
+        suggested = "captura.png"
+        if self.filename:
+            suggested = Path(self.filename).stem + ".png"
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Guardar imagen como PNG", suggested,
+            "Imagen PNG (*.png)"
+        )
+        if not filename:
+            return
+
+        if not filename.lower().endswith(".png"):
+            filename += ".png"
+
+        if not self.canvas.image.save(filename, "PNG"):
+            QMessageBox.critical(self, "Error", f"No se pudo guardar la imagen en:\n{filename}")
+        else:
+            self.statusBar().showMessage(f"Imagen guardada en {filename}", 5000)
 
     # ---------- Parameters ----------
     def _on_zoom(self, value):
